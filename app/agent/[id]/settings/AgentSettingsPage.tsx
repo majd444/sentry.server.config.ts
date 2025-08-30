@@ -124,7 +124,7 @@ export default function AgentSettingsPage() {
   const shouldRunPrivate = isUserLoaded && !!user;
   const knowledgeEntriesPrivate = useQuery(
     api.fineTuning.getAgentFineTuningOutputs,
-    shouldRunPrivate ? { agentId: String(params.id) } : undefined
+    shouldRunPrivate ? { agentId: String(params.id) } : "skip"
   );
   const knowledgeEntries = useMemo(() => (
     shouldRunPrivate && knowledgeEntriesPrivate ? knowledgeEntriesPrivate : []
