@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Metadata } from "next";
 import { useSearchParams } from "next/navigation";
-
-export const metadata: Metadata = {
-  title: "Chat | Vaste",
-  description: "Public chat page that embeds the Vaste chatbot widget.",
-};
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
