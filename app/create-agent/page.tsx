@@ -338,7 +338,6 @@ function CreateAgentModal({ onClose }: CreateAgentModalProps) {
         headerColor,
         accentColor,
         backgroundColor,
-        profileImage: profileImage || undefined,
         collectUserInfo,
         formFields: formFieldsData
       });
@@ -355,7 +354,6 @@ function CreateAgentModal({ onClose }: CreateAgentModalProps) {
           headerColor,
           accentColor,
           backgroundColor,
-          profileImage: profileImage || undefined,
           collectUserInfo,
           formFields: formFieldsData
         });
@@ -370,7 +368,6 @@ function CreateAgentModal({ onClose }: CreateAgentModalProps) {
           headerColor,
           accentColor,
           backgroundColor,
-          profileImage: profileImage || undefined,
           collectUserInfo,
           formFields: formFieldsData
         });
