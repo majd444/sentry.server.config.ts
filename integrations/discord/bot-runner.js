@@ -9,10 +9,14 @@
   - DISCORD_BACKEND_KEY=strong-shared-secret (must match Convex env var DISCORD_BACKEND_KEY)
 */
 
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
 const CONVEX_URL = process.env.CONVEX_URL;
 const BACKEND_KEY = process.env.DISCORD_BACKEND_KEY;
+
+// Startup diagnostics (do not print secrets). Helps debug Railway env propagation.
+console.log('[env] CONVEX_URL defined:', Boolean(CONVEX_URL), 'value:', CONVEX_URL || '(empty)');
+console.log('[env] DISCORD_BACKEND_KEY defined:', Boolean(BACKEND_KEY), 'length:', BACKEND_KEY ? BACKEND_KEY.length : 0);
 
 if (!CONVEX_URL || !BACKEND_KEY) {
   console.error('Missing CONVEX_URL or DISCORD_BACKEND_KEY');
@@ -52,8 +56,10 @@ function startClientForConfig(cfg) {
     intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.DirectMessages,
       GatewayIntentBits.MessageContent,
     ],
+    partials: [Partials.Channel], // Required to receive DMs
   });
 
   client.once('ready', async () => {
