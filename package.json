@@ -1,0 +1,16 @@
+{
+  "name": "vaste-discord-bot-runner",
+  "version": "1.0.0",
+  "private": true,
+  "main": "integrations/discord/bot-runner.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node integrations/discord/bot-runner.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
