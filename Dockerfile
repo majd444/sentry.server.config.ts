@@ -21,4 +21,4 @@ COPY . .
 #   CMD node -e "process.exit(0)"
 
 # Start the bot runner
-CMD ["node", "integrations/discord/bot-runner.js"]
+CMD ["node", "integrations/discord/bot-runner.cjs"]
