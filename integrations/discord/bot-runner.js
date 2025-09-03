@@ -33,11 +33,20 @@ const headers = {
 const clients = new Map();
 // Track heartbeat intervals by configId
 const heartbeats = new Map();
+// Track which normalized bot token currently has a running client
+const runningByToken = new Map(); // tokenKey -> configId
+const idToToken = new Map(); // configId -> tokenKey
 
 // Instance identity and lock config
 const INSTANCE_ID = `runner-${os.hostname?.() || 'host'}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const LOCK_TTL_MS = 60_000; // 60s
 const RENEW_INTERVAL_MS = 30_000; // renew every 30s
+console.log('[lock] INSTANCE_ID =', INSTANCE_ID);
+if (process.env.AGENT_ID) {
+  console.log('[env] AGENT_ID defined: true');
+} else {
+  console.log('[env] AGENT_ID defined: false');
+}
 
 // Dedup cache: track processed message IDs for a short TTL to avoid double replies
 const processedMessages = new Map(); // key -> timestamp
@@ -63,6 +72,46 @@ async function fetchActiveConfigs() {
   return res.json();
 }
 
+// Distributed lock helpers
+async function claimLock(configId) {
+  const res = await fetch(`${CONVEX_URL}/http/discord/bot/claim`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ configId, instanceId: INSTANCE_ID, ttlMs: LOCK_TTL_MS }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`claimLock ${configId} failed: ${res.status} ${t}`);
+  }
+  return res.json();
+}
+
+async function renewLock(configId) {
+  const res = await fetch(`${CONVEX_URL}/http/discord/bot/renew`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ configId, instanceId: INSTANCE_ID, ttlMs: LOCK_TTL_MS }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`renewLock ${configId} failed: ${res.status} ${t}`);
+  }
+  return res.json();
+}
+
+async function releaseLock(configId) {
+  const res = await fetch(`${CONVEX_URL}/http/discord/bot/release`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ configId, instanceId: INSTANCE_ID }),
+  });
+  // Best-effort; don't throw on release
+  if (!res.ok && process.env.DEBUG) {
+    const t = await res.text().catch(() => '');
+    console.warn(`releaseLock ${configId} non-200: ${res.status} ${t}`);
+  }
+}
+
 async function updateStatus(configId, status) {
   try {
     await fetch(`${CONVEX_URL}/http/discord/bot/updateStatus`, {
@@ -77,6 +126,10 @@ async function updateStatus(configId, status) {
 
 function startClientForConfig(cfg) {
   if (clients.has(cfg._id)) return; // already running
+  const tokenKey = (cfg.botToken || '').trim();
+  if (!tokenKey) return;
+  // Do not start if another client already owns this token
+  if (runningByToken.has(tokenKey)) return;
 
   const client = new Client({
     intents: [
@@ -119,7 +172,10 @@ function startClientForConfig(cfg) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId }),
       });
-      if (!sessionRes.ok) throw new Error(`Session failed: ${sessionRes.status}`);
+      if (!sessionRes.ok) {
+        const t = await sessionRes.text().catch(() => '');
+        throw new Error(`Session failed: ${sessionRes.status} ${t}`);
+      }
       const session = await sessionRes.json();
 
       // Send chat
@@ -133,7 +189,10 @@ function startClientForConfig(cfg) {
           history: [],
         }),
       });
-      if (!chatRes.ok) throw new Error(`Chat failed: ${chatRes.status}`);
+      if (!chatRes.ok) {
+        const t = await chatRes.text().catch(() => '');
+        throw new Error(`Chat failed: ${chatRes.status} ${t}`);
+      }
       const chat = await chatRes.json();
 
       const reply = (chat && typeof chat.reply === 'string' && chat.reply.trim())
@@ -151,21 +210,32 @@ function startClientForConfig(cfg) {
       client.on('error', (e) => console.error(`[${cfg._id}] client error:`, e));
       client.on('shardError', (e) => console.error(`[${cfg._id}] shard error:`, e));
 
-      client.login(cfg.botToken)
-        .then(() => {
+      // Attempt to claim the distributed lock before logging in
+      claimLock(cfg._id)
+        .then(async () => {
+          // Start client after lock claimed
+          await client.login(cfg.botToken);
           clients.set(cfg._id, client);
+          runningByToken.set(tokenKey, cfg._id);
+          idToToken.set(cfg._id, tokenKey);
+          // Start heartbeat to renew lock periodically
+          const hb = setInterval(async () => {
+            try { await renewLock(cfg._id); }
+            catch (err) {
+              console.error(`[${cfg._id}] renewLock failed, stopping client:`, err);
+              try { await client.destroy(); } catch {}
+              clients.delete(cfg._id);
+              const tk = idToToken.get(cfg._id); if (tk) { runningByToken.delete(tk); idToToken.delete(cfg._id); }
+              const h = heartbeats.get(cfg._id); if (h) { clearInterval(h); heartbeats.delete(cfg._id); }
+              await updateStatus(cfg._id, 'stopped');
+            }
+          }, RENEW_INTERVAL_MS);
+          heartbeats.set(cfg._id, hb);
         })
         .catch(async (e) => {
-          console.error(`[${cfg._id}] login failed:`, e);
-          await updateStatus(cfg._id, 'login_failed');
-          // Release lock if login fails
-          await releaseLock(cfg._id);
-          const hb = heartbeats.get(cfg._id);
-          if (hb) { clearInterval(hb); heartbeats.delete(cfg._id); }
+          console.warn(`[${cfg._id}] lock claim failed, not starting client:`, e?.message || e);
+          await updateStatus(cfg._id, 'lock_denied');
         });
-    })
-    .catch((e) => {
-      console.warn(`[${cfg._id}] lock claim failed:`, e?.message || e);
     });
 }
 
@@ -174,11 +244,13 @@ async function reconcile() {
     const configs = await fetchActiveConfigs();
 
     // Group by botToken and pick the newest updatedAt per token
-    const byToken = new Map(); // botToken -> cfg
+    const byToken = new Map(); // tokenKey -> cfg
     for (const cfg of configs) {
-      const prev = byToken.get(cfg.botToken);
+      const tokenKey = (cfg.botToken || '').trim();
+      if (!tokenKey) continue;
+      const prev = byToken.get(tokenKey);
       if (!prev || (typeof cfg.updatedAt === 'number' && cfg.updatedAt > (prev.updatedAt || 0))) {
-        byToken.set(cfg.botToken, cfg);
+        byToken.set(tokenKey, cfg);
       }
     }
     const selected = Array.from(byToken.values());
@@ -198,6 +270,7 @@ async function reconcile() {
         const hb = heartbeats.get(id);
         if (hb) { clearInterval(hb); heartbeats.delete(id); }
         await releaseLock(id);
+        const tk = idToToken.get(id); if (tk) { runningByToken.delete(tk); idToToken.delete(id); }
       }
     }
   } catch (e) {
@@ -220,6 +293,7 @@ async function shutdown() {
       if (hb) { clearInterval(hb); heartbeats.delete(id); }
       await releaseLock(id);
       await updateStatus(id, 'stopped');
+      const tk = idToToken.get(id); if (tk) { runningByToken.delete(tk); idToToken.delete(id); }
     }
   } finally {
     process.exit(0);
