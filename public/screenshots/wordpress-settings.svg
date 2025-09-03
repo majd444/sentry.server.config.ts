@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <rect width="1200" height="700" fill="#f3f4f6"/>
+  <rect x="60" y="60" width="1080" height="580" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="600" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#111827">WordPress Settings (Placeholder)</text>
+  <rect x="120" y="180" width="400" height="24" fill="#f9fafb" stroke="#e5e7eb"/>
+  <text x="120" y="174" font-family="Arial, sans-serif" font-size="14" fill="#374151">Script URL</text>
+  <rect x="120" y="260" width="400" height="24" fill="#f9fafb" stroke="#e5e7eb"/>
+  <text x="120" y="254" font-family="Arial, sans-serif" font-size="14" fill="#374151">Chatbot Key / Agent ID</text>
+  <rect x="120" y="340" width="400" height="120" fill="#f9fafb" stroke="#e5e7eb"/>
+  <text x="120" y="334" font-family="Arial, sans-serif" font-size="14" fill="#374151">Extra data-* attributes (key=value)</text>
+  <rect x="120" y="500" width="200" height="40" fill="#2563eb"/>
+  <text x="220" y="526" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#ffffff">Save Changes</text>
+</svg>

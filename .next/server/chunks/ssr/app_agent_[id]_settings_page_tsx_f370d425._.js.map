@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/majd/vaste/probable-broccoli/app/agent/%5Bid%5D/settings/page.tsx"],"sourcesContent":["\"use client\"\n\nimport dynamic from 'next/dynamic';\n\n// Dynamically import the AgentSettingsPage component with no SSR\nconst AgentSettings = dynamic(\n  () => import('./AgentSettingsPage'),\n  { ssr: false }\n);\n\nexport default function AgentSettingsPage() {\n  return <AgentSettings />;\n}\n"],"names":[],"mappings":";;;;AAEA;;AAFA;;;AAIA,iEAAiE;AACjE,MAAM,gBAAgB,CAAA,GAAA,+JAAA,CAAA,UAAO,AAAD;;;;;;IAExB,KAAK;;AAGM,SAAS;IACtB,qBAAO,8OAAC;;;;;AACV","debugId":null}}]
+}

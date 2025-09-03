@@ -1,0 +1,14 @@
+const CHUNK_PUBLIC_PATH = "server/app/api/discord/host-bot/route.js";
+const runtime = require("../../../../chunks/[turbopack]_runtime.js");
+runtime.loadChunk("server/chunks/node_modules_78701b2c._.js");
+runtime.loadChunk("server/chunks/node_modules_next_2f75cfcf._.js");
+runtime.loadChunk("server/chunks/node_modules_@clerk_backend_dist_90ae55c0._.js");
+runtime.loadChunk("server/chunks/node_modules_@clerk_nextjs_dist_esm_426f611f._.js");
+runtime.loadChunk("server/chunks/node_modules_convex_dist_esm_c1d5010b._.js");
+runtime.loadChunk("server/chunks/b7345_undici_8e6e242a._.js");
+runtime.loadChunk("server/chunks/node_modules_19995083._.js");
+runtime.loadChunk("server/chunks/node_modules_6db9aafe._.js");
+runtime.loadChunk("server/chunks/[root-of-the-server]__2b491f7d._.js");
+runtime.getOrInstantiateRuntimeModule("[project]/.next-internal/server/app/api/discord/host-bot/route/actions.js [app-rsc] (server actions loader, ecmascript)", CHUNK_PUBLIC_PATH);
+runtime.getOrInstantiateRuntimeModule("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/discord/host-bot/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)", CHUNK_PUBLIC_PATH);
+module.exports = runtime.getOrInstantiateRuntimeModule("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/discord/host-bot/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)", CHUNK_PUBLIC_PATH).exports;

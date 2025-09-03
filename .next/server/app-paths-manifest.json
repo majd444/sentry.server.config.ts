@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/agent/[id]/page": "app/agent/[id]/page.js",
+  "/agent/[id]/settings/page": "app/agent/[id]/settings/page.js",
+  "/api/discord/bot-config/route": "app/api/discord/bot-config/route.js",
+  "/api/discord/host-bot/route": "app/api/discord/host-bot/route.js",
+  "/create-agent/page": "app/create-agent/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/integrations/discord/page": "app/integrations/discord/page.js",
+  "/page": "app/page.js"
+}

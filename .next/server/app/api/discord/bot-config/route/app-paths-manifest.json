@@ -1,0 +1,3 @@
+{
+  "/api/discord/bot-config/route": "app/api/discord/bot-config/route.js"
+}
